@@ -17,22 +17,22 @@ var Message = function(content) {
     this.content = content;
     this.timeStamp = new Date().toDateString();
 };
-console.log("SERVER STARTEd");
+
 //Create Array that will hold messages on the server side
 var messageArray = [];
-
+var i = 0; //test to see this increments to each client
 //on connected, send all messages stored
 io.on('connection', (socket) => {
     console.log('Client connected');
 
-    socket.emit("connection", messageArray);
+    socket.emit("connection", i++);
     console.log("STARTING MESSAGING");
 
     socket.on('sendMessage', (message) => {
         console.log("message received from ui : ", message);
-        var message = new Message();
-        message.content = message;
-        messageArray.push(message);
+        /*  var message = new Message();
+          message.content = message;
+          messageArray.push(message);*/
         io.emit('messageSent', message);
     });
     console.log("STARTING DISCONNECT");
