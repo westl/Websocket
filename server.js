@@ -27,12 +27,13 @@ io.on('connection', (socket) => {
 
     socket.emit("connection", messageArray);
     console.log("STARTING MESSAGING");
+
     socket.on('sendMessage', (message) => {
-        console.log("message received : ", message);
+        console.log("message received from ui : ", message);
         var message = new Message();
         message.content = message;
         messageArray.push(message);
-        //io.sockets.emit('messageSent', () => console.log("Someone sent a msg!"));
+        io.emit('messageSent', message);
     });
     console.log("STARTING DISCONNECT");
     socket.on('disconnect', () => console.log('Client disconnected'));

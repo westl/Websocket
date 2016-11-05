@@ -43,7 +43,7 @@
                 });
 
                 this.socket.on('messageSent', (text) => {
-                    console.log(text);
+                    console.log("message received from server:", text);
                     this.messages.push({
                         content: text
                     });
