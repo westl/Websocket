@@ -42,7 +42,7 @@
                     this.messages = data;
                 });
 
-                this.socket.on("sendMessage", (text) => {
+                this.socket.on('messageSent', (text) => {
                     console.log(text);
                     this.messages.push({
                         content: text
@@ -67,7 +67,7 @@
 
                 //Sends the message to the server
                 this.sendMessage = (text) => {
-                    this.socket.emit("sendMessage", {
+                    this.socket.emit('sendMessage', {
                         context: text,
                         timeStamp: new Date().toLocaleString()
                     });

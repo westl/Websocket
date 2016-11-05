@@ -24,11 +24,15 @@ var messageArray = [];
 //on connected, send all messages stored
 io.on('connection', (socket) => {
     console.log('Client connected');
+
     socket.emit("connection", messageArray);
-    socket.on("sendMessage", (message) => {
+
+    socket.on('sendMessage', (message) => {
+        console.log("message received : ", message);
         var message = new Message();
         message.content = message;
         messageArray.push(message);
+        io.sockets.emit('messageSent', () => console.log("Someone sent a msg!"));
     });
     socket.on('disconnect', () => console.log('Client disconnected'));
 });
