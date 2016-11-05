@@ -22,30 +22,15 @@ var Message = function(content) {
 var messageArray = [];
 //on connected, send all messages stored
 io.on('connection', (socket) => {
-    var message = {
-        content: "Hello World",
-        timeStamp: new Date().toDateString()
-    };
+    socket.emit('connection', messageArray);
 
-    var interval = setInterval(() => {
-        socket.emit('send message', message)
-    }, 3000);
+    socket.on('message sent', (message) => {
+        messageArray.push(message);
+        io.emit('message received', message); // each listener receives this .
+    });
 
     socket.on('disconnect', () => {
         io.emit('user disconnected');
-        clearInterval = interval;
+        console.log('user disconnected');
     });
-    /*io.emit("connection", messageArray); //received by everyone
-
-    socket.on('sendMessage', (message) => {
-        console.log("message received from ui : ", message);
-          var message = new Message();
-          message.content = message;
-          messageArray.push(message);
-        socket.emit('messageSent', message);
-    });
-
-    socket.on('disconnect', () => {
-      io.emite('user disconnected');
-    });*/
 });

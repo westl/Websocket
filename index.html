@@ -6,13 +6,12 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous" />
 </head>
 
-<body ng-app="myApp" ng-controller="mainController as main">
+<body ng-app="myApp" ng-controller="mainController">
     <div class="container">
         <div class="col-sm-12" style="height:700px;overflow-y: scroll;border:1px solid #ddd;position:relative">
             <ul class="list-group">
-                <li class="list-group-item" ng-repeat="message in main.messages track by $index">
-
-                    {{message.content}} <small class="text-muted">{{message.timeStamp}}</small>
+                <li class="list-group-item" ng-repeat="message in main.handle.messages track by $index">
+                    {{message.content}} <small class="text-muted">{{message.timeStamp}}</small> {{main.messages}}
                 </li>
             </ul>
             <form class="form-inline row" style="position:absolute;bottom:0;width:100%;">
@@ -31,51 +30,39 @@
     <script src="https://use.fontawesome.com/ffd43d6c17.js"></script>
     <script>
         var myApp = angular.module('myApp', [])
-            .controller("mainController", function() {
+            .controller("mainController", function($scope) {
                 //the main controller that will handle chatting
-                this.messages = [];
+                $scope.main = this;
+
+                this.handle = {
+                    messages: []
+                };
                 //Socket listeners
                 this.socket = io();
 
+                //when someone new connects, give them the current chat log
                 this.socket.on("connection", (data) => {
-                    console.log("connection data: ", data);
-                    this.messages = data;
-                });
-
-                this.socket.on('send message', (message) => {
-                    console.log("message received from server:", message);
-                    this.messages.push(message);
-                    console.log("the current array: ", this.messages);
-                });
-
-                this.socket.on("userJoined", () => {
-                    this.message.push({
-                        content: "A new user has joined the room"
+                    $scope.$apply(() => {
+                        this.handle.messages = data;
                     });
                 });
 
-                this.socket.on("userLeft", () => {
-                    this.messages.push({
-                        context: "A user has disconnected"
+                //When message received from server, push it to the current chat log
+                this.socket.on('message received', (message) => {
+                    $scope.$apply(() => {
+                        this.handle.messages.push(message);
                     });
                 });
                 //End of socket listeners
 
-                //load all meeages on initialization
-
-
                 //Sends the message to the server
                 this.sendMessage = (text) => {
-                    this.socket.emit('sendMessage', {
-                        context: text,
+                    var message = {
+                        content: text,
                         timeStamp: new Date().toLocaleString()
-                    });
+                    };
+                    this.socket.emit('message sent', message);
                     this.message = '';
-                };
-
-                //as the page loads, load all of the messages
-                this.loadAllMessages = () => {
-                    console.log("loading all messages");
                 };
 
             });
