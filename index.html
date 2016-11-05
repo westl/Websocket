@@ -42,11 +42,9 @@
                     this.messages = data;
                 });
 
-                this.socket.on('messageSent', (text) => {
-                    console.log("message received from server:", text);
-                    this.messages.push({
-                        content: text
-                    });
+                this.socket.on('messageSent', (message) => {
+                    console.log("message received from server:", message);
+                    this.messages.push(message);
                 });
 
                 this.socket.on("userJoined", () => {

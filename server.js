@@ -20,12 +20,11 @@ var Message = function(content) {
 
 //Create Array that will hold messages on the server side
 var messageArray = [];
-var i = 0; //test to see this increments to each client
 //on connected, send all messages stored
 io.on('connection', (socket) => {
     console.log('Client connected');
 
-    socket.emit("connection", i++);
+    socket.emit("connection", messageArray);
     console.log("STARTING MESSAGING");
 
     socket.on('sendMessage', (message) => {
@@ -33,7 +32,7 @@ io.on('connection', (socket) => {
         /*  var message = new Message();
           message.content = message;
           messageArray.push(message);*/
-        io.emit('messageSent', message);
+        socket.emit('messageSent', message);
     });
     console.log("STARTING DISCONNECT");
     socket.on('disconnect', () => console.log('Client disconnected'));
