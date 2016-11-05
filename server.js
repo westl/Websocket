@@ -12,10 +12,25 @@ const server = express()
     .listen(PORT, () => console.log(`Listening on ${ PORT }`));
 
 const io = socketIO(server);
+//Create the Message class that will exist on the server
+var Message = function(content) {
+    this.content = content;
+    this.timeStamp = new Date().toDateString();
+};
 
+//Create Array that will hold messages on the server side
+var messageArray = [];
+
+//on connected, send all messages stored
 io.on('connection', (socket) => {
     console.log('Client connected');
+    socket.emit("connection", messageArray);
+    socket.on("sendMessage", (message) => {
+        var message = new Message();
+        message.content = message;
+        messageArray.push(message);
+    });
     socket.on('disconnect', () => console.log('Client disconnected'));
 });
 
-setInterval(() => io.emit('time', new Date().toTimeString()), 1000);
+//whenever a message is added, push that to the array and display

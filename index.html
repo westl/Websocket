@@ -1,14 +1,91 @@
+<!DOCTYPE html>
 <html>
 
-<body>
-    <p id='server-time'></p>
+<head>
+    <title>Lamar's Chat</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous" />
+</head>
+
+<body ng-app="myApp" ng-controller="mainController as main">
+    <div class="container">
+        <div class="col-sm-12" style="height:700px;overflow-y: scroll;border:1px solid #ddd;position:relative">
+            <ul class="list-group">
+                <li class="list-group-item" ng-repeat="message in main.messages track by $index">
+
+                    {{message.content}} <small class="text-muted">{{message.timeStamp}}</small>
+                </li>
+            </ul>
+            <form class="form-inline row" style="position:absolute;bottom:0;width:100%;">
+                <div class="form-group col-sm-11" style="padding-right:0">
+                    <input style="width:100%" type="text" class="form-control" id="chatBox" placeholder="Send a Message!" ng-model="main.message">
+                </div>
+                <div class="col-sm-1" style="padding-left:0">
+                    <button ng-click="main.sendMessage(main.message)" type="submit" class="btn btn-primary">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+    <script src="https://use.fontawesome.com/ffd43d6c17.js"></script>
     <script>
-        var socket = io();
-        var el = document.getElementById('server-time');
-        socket.on('time', function(timeString) {
-            el.innerHTML = 'Server time: ' + timeString;
-        });
+        var myApp = angular.module('myApp', [])
+            .controller("mainController", function() {
+                //the main controller that will handle chatting
+                this.messages = [];
+                //Socket listeners
+                this.socket = io();
+
+                this.socket.on("connection", (data) => {
+                    console.log("connection data: ", data);
+                    this.messages = data;
+                });
+
+                this.socket.on("sendMessage", (text) => {
+                    console.log(text);
+                    this.messages.push({
+                        content: text
+                    });
+                });
+
+                this.socket.on("userJoined", () => {
+                    this.message.push({
+                        content: "A new user has joined the room"
+                    });
+                });
+
+                this.socket.on("userLeft", () => {
+                    this.messages.push({
+                        context: "A user has disconnected"
+                    });
+                });
+                //End of socket listeners
+
+                //load all meeages on initialization
+
+
+                //Sends the message to the server
+                this.sendMessage = (text) => {
+                    this.socket.emit("sendMessage", {
+                        context: text,
+                        timeStamp: new Date().toLocaleString()
+                    });
+
+                    this.messages.push({
+                        content: text,
+                        timeStamp: new Date().toLocaleString()
+                    });
+
+                    this.message = '';
+                };
+
+                //as the page loads, load all of the messages
+                this.loadAllMessages = () => {
+                    console.log("loading all messages");
+                };
+
+            });
     </script>
 </body>
 
