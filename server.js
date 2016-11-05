@@ -17,7 +17,7 @@ var Message = function(content) {
     this.content = content;
     this.timeStamp = new Date().toDateString();
 };
-
+console.log("SERVER STARTEd");
 //Create Array that will hold messages on the server side
 var messageArray = [];
 
@@ -26,14 +26,15 @@ io.on('connection', (socket) => {
     console.log('Client connected');
 
     socket.emit("connection", messageArray);
-
+    console.log("STARTING MESSAGING");
     socket.on('sendMessage', (message) => {
         console.log("message received : ", message);
         var message = new Message();
         message.content = message;
         messageArray.push(message);
-        io.sockets.emit('messageSent', () => console.log("Someone sent a msg!"));
+        //io.sockets.emit('messageSent', () => console.log("Someone sent a msg!"));
     });
+    console.log("STARTING DISCONNECT");
     socket.on('disconnect', () => console.log('Client disconnected'));
 });
 
