@@ -82,7 +82,7 @@
         <div class="input-container">
             <div class="flex-row-nowrap">
                 <div class="input-box">
-                    <input ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)" type="text" class="form-control" id="chatBox" placeholder="Send a Message!" ng-model="main.message" />
+                    <input ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)" type="text" class="form-control" id="chatBox" placeholder="Send a message {{main.userName}}!" ng-model="main.message" />
                 </div>
                 <div class="input-send-button">
                     <button ng-click="main.sendMessage('clicked',main.message)" type="submit" class="btn btn-primary">Send</button>
