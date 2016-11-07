@@ -15,7 +15,7 @@ const io = socketIO(server);
 var messageArray = [];
 //Create array the will hold everyone who is currently typing
 var currentlyTyping = [];
-//on connected, send all messages stored and give the user a random username
+//on connected, send all messages stored and give the user a random username 
 io.on('connection', (socket) => {
     //pass each user the chat log
     socket.emit('connection', {
