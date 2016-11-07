@@ -13,15 +13,30 @@ const server = express()
 const io = socketIO(server);
 //Create Array that will hold messages on the server side
 var messageArray = [];
+//Create array the will hold everyone who is currently typing
+var currentlyTyping = [];
 //on connected, send all messages stored and give the user a random username
 io.on('connection', (socket) => {
     //pass each user the chat log
-    socket.emit('connection', messageArray);
+    socket.emit('connection', {
+        "messages": messageArray,
+        "peopleTyping": currentlyTyping
+    });
 
     var userName = Moniker.choose();
     //give each user a username
     socket.emit('logged in', userName);
 
+    socket.on('im typing', (userName) => {
+        currentlyTyping.push(userName);
+        io.emit('typing activity updated', currentlyTyping);
+    });
+
+    socket.on('im no longer typing', (userName) => {
+        //check if person exists in the array
+        currentlyTyping = this.removeFromArray(userName, currentlyTyping);
+        io.emit('typing activity updated', currentlyTyping);
+    });
 
     socket.on('message sent', (message) => {
         messageArray.push(message);
@@ -32,3 +47,12 @@ io.on('connection', (socket) => {
         io.emit('user disconnected');
     });
 });
+
+//Helper functions
+this.removeFromArray = (item, array) => {
+    var index = array.indexOf(item);
+    if (index > -1) {
+        array.splice(index, 1);
+    }
+    return array;
+};

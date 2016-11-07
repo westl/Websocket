@@ -25,22 +25,44 @@
         }
 
         .chat-container {
-            height: 90vh;
+            height: 75vh;
             order: 1;
             overflow: auto;
             z-index: 1;
+            word-break: break-all;
         }
 
         .input-container {
             display: flex;
-            flex-direction: row;
-            height: 10vh;
+            flex-flow: column;
+            height: 20vh;
             order: 2;
             z-index: 2
         }
 
         .input-box {
             flex: 1;
+            order: 1;
+        }
+
+        .input-send-button {
+            order: 2
+        }
+
+        .notifications {
+            order: 1;
+        }
+
+        .flex-row-nowrap {
+            display: flex;
+            flex-flow: row nowrap;
+            order: 2;
+        }
+
+        .people-typing {
+            height: 24px;
+            justify-content: center;
+            display: flex;
         }
     </style>
 </head>
@@ -58,104 +80,167 @@
             </ul>
         </div>
         <div class="input-container">
-            <div class="input-box">
-                <input ng-keypress="main.sendMessage($event, main.message)" type="text" class="form-control" id="chatBox" placeholder="Send a Message!" ng-model="main.message" />
+            <div class="flex-row-nowrap">
+                <div class="input-box">
+                    <input ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)" type="text" class="form-control" id="chatBox" placeholder="Send a Message!" ng-model="main.message" />
+                </div>
+                <div class="input-send-button">
+                    <button ng-click="main.sendMessage('clicked',main.message)" type="submit" class="btn btn-primary">Send</button>
+                </div>
             </div>
-            <div class="input-send-button">
-                <button ng-click="main.sendMessage('clicked',main.message)" type="submit" class="btn btn-primary">Send</button>
+
+            <div class="notifications">
+                <div class="people-typing">
+                    <div ng-cloak ng-show="main.handle.peopleTyping.length > 0">
+                        <span class="tag tag-default" ng-if="main.handle.peopleTyping.length >= 1 && main.handle.peopleTyping.length < 5">
+                    <span ng-repeat="person in main.handle.peopleTyping track by $index"  ng-style="{color:main.handle.colors[person]}">
+                      <span ng-if="$index != 0">
+                        ,
+                      </span> {{person}}
+                        </span>
+                        is typing &#8230;
+                        </span>
+
+                        <span class="tag tag-default" ng-style="{color:main.handle.colors[message.userName]}" ng-if="main.handle.peopleTyping.length >= 5">
+                        {{main.handle.peopleTyping.length}} people are typing &#8230;
+                    </span>
+                    </div>
+                </div>
+                <div ng-cloak ng-if="main.message.length > main.maxCharacters" class="alert alert-danger">
+                    <strong>Error!</strong> Your message is too long (max characters: {{main.maxCharacters}}) it will not be sent!
+                </div>
+
             </div>
+
         </div>
-    </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
-    <script>
-        var myApp = angular.module('myApp', [])
-            .controller("mainController", function($scope, $timeout, $filter) {
-                //the main controller that will handle chatting
-                $scope.main = this;
-                this.userName = "unknown";
-                this.handle = {
-                    messages: [],
-                    colors: {}
-                };
-                //Socket listeners
-                this.socket = io();
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+        <script>
+            var myApp = angular.module('myApp', [])
+                .controller("mainController", function($scope, $timeout, $filter) {
+                    //the main controller that will handle chatting
+                    $scope.main = this;
+                    this.userName = "unknown";
+                    this.notifiedServiceOfTyping = false; // if we already sent the server a message that we are
+                    this.maxCharacters = 5000;
+                    this.handle = {
+                        messages: [],
+                        peopleTyping: [],
+                        colors: {}
+                    };
+                    //Socket listeners
+                    this.socket = io();
 
-                //when someone new connects, give them the current chat log
-                this.socket.on("connection", (data) => {
-                    $scope.$apply(() => {
-                        this.handle.messages = data;
-                    });
+                    //when someone new connects, give them the current chat log
+                    this.socket.on("connection", (data) => {
+                        $scope.$apply(() => {
+                            this.handle.messages = data.messages;
+                            this.handle.peopleTyping = data.peopleTyping;
+                            //remove self from array
+                            var index = this.handle.peopleTyping.indexOf(this.userName);
+                            if (index > -1)
+                                this.handle.peopleTyping.splice(index, 1);
+                        });
 
-                    //user is completely new to application give each username in the chat a new color
-                    this.generateColorObject();
-                });
-
-                //When message received from server, push it to the current chat log
-                this.socket.on('logged in', (userName) => {
-                    $scope.$apply(() => {
-                        this.userName = userName;
-                        this.handle.colors[this.userName] = 'black';
-                    });
-                    this.setScrollBar();
-                });
-
-                //When message received from server, push it to the current chat log
-                this.socket.on('message received', (message) => {
-                    //just for speeds sake, if the username exists in the color object, lets not generate a  new color for them.
-                    if (!this.existsInColorObject(message.userName)) {
+                        //user is completely new to application give each username in the chat a new color
                         this.generateColorObject();
-                    }
-
-                    $scope.$apply(() => {
-                        this.handle.messages.push(message);
                     });
 
-                    this.setScrollBar();
-                });
-                //End of socket listeners
-
-                //Sends the message to the server
-                this.sendMessage = (keyEvent, text) => {
-                    if (keyEvent.which === 13 || keyEvent === 'clicked') {
-                        var message = {
-                            userName: this.userName,
-                            content: text,
-                            timeStamp: new Date()
-                        };
-                        this.socket.emit('message sent', message);
-                        this.message = '';
+                    //When message received from server, push it to the current chat log
+                    this.socket.on('logged in', (userName) => {
+                        $scope.$apply(() => {
+                            this.userName = userName;
+                            this.handle.colors[this.userName] = 'black';
+                        });
                         this.setScrollBar();
-                    } else
-                        return;
-                };
+                    });
 
-                //helper function to set the scrollbar always ta the bottom of its height
-                this.setScrollBar = () => {
-                    $timeout(function() {
-                        var scroller = angular.element(document).find(".chat-container")[0];
-                        scroller.scrollTop = scroller.scrollHeight;
-                    }, 0, false);
-                };
+                    this.socket.on('typing activity updated', (listOfPeopleTyping) => {
+                        $scope.$apply(() => {
+                            this.handle.peopleTyping = listOfPeopleTyping; // simply usernames
+                            //remove self from array
+                            var index = this.handle.peopleTyping.indexOf(this.userName);
+                            if (index > -1)
+                                this.handle.peopleTyping.splice(index, 1);
+                        });
+                    });
 
-                this.existsInColorObject = (userName) => {
-                    return this.handle.colors[userName];
-                };
+                    //When message received from server, push it to the current chat log
+                    this.socket.on('message received', (message) => {
 
-                this.generateColorObject = () => {
-                    for (let messageObject of this.handle.messages) {
-                        //if a username exists, it probably already has a color, therefore, continue
-                        if (this.existsInColorObject(messageObject.userName))
-                            continue;
-                        //username doesn't exist, set a key "their name", and a value "their generated color"
-                        this.handle.colors[messageObject.userName] = '#' + Math.floor(Math.random() * 16777215).toString(16);
-                    }
-                };
+                        $scope.$apply(() => {
+                            this.handle.messages.push(message);
+                        });
+
+                        //just for speeds sake, if the username exists in the color object, lets not generate a  new color for them.
+                        if (!this.existsInColorObject(message.userName)) {
+                            this.generateColorObject();
+                        }
+
+                        this.setScrollBar();
+                    });
+                    //End of socket listeners
 
 
-            });
-    </script>
+                    //Let the server know you're typing and to shoot this off to all other clients
+                    this.imTyping = () => {
+                        if (this.message && !this.notifiedServiceOfTyping) {
+                            this.socket.emit('im typing', this.userName);
+                            //stops subsequent calls to the service if we already let it know that we're typing
+                            this.notifiedServiceOfTyping = true;
+                        } else if (!this.message) {
+                            this.socket.emit('im no longer typing', this.userName);
+                            this.notifiedServiceOfTyping = false;
+                        }
+                    };
+
+                    //Sends the message to the server
+                    this.sendMessage = (keyEvent, text) => {
+                        //submit
+                        if (keyEvent.which === 13 || keyEvent === 'clicked') {
+                            //check to see if the message is valid
+                            if (text && text.length < this.maxCharacters) {
+                                var message = {
+                                    userName: this.userName,
+                                    content: text,
+                                    timeStamp: new Date()
+                                };
+                                this.socket.emit('message sent', message); //implies that you're no longer typing also
+                                this.socket.emit('im no longer typing', this.userName);
+                                this.setScrollBar();
+                            }
+                            //erase message whether message is invalid or not
+                            this.message = '';
+                            this.notifiedServiceOfTyping = false;
+                        }
+                    };
+
+                    //helper function to set the scrollbar always ta the bottom of its height
+                    this.setScrollBar = () => {
+                        $timeout(function() {
+                            var scroller = angular.element(document).find(".chat-container")[0];
+                            scroller.scrollTop = scroller.scrollHeight;
+                        }, 0, false);
+                    };
+
+                    this.existsInColorObject = (userName) => {
+                        return this.handle.colors[userName];
+                    };
+
+                    this.generateColorObject = () => {
+                        for (let messageObject of this.handle.messages) {
+
+                            //if a username exists, it probably already has a color, therefore, continue
+                            if (!this.existsInColorObject(messageObject.userName)) {
+                                this.handle.colors[messageObject.userName] = '#' + Math.floor(Math.random() * 16777215).toString(16);
+                            }
+                        }
+                    };
+
+
+                });
+        </script>
 </body>
 
 </html>
