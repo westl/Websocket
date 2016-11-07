@@ -4,24 +4,68 @@
 <head>
     <title>Lamar's Chat</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous" />
+    <style>
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: auto;
+        }
+
+        .wrapper {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-direction: column;
+            flex-direction: column;
+        }
+
+        .chat-container,
+        .input-container {
+            flex: 1;
+        }
+
+        .chat-container {
+            height: 95vh;
+            order: 1;
+            overflow: auto;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: row;
+            height: 5vh;
+            order: 2;
+        }
+
+        .input-box {
+            flex: 1;
+        }
+
+        .input-send-button {}
+    </style>
 </head>
 
 <body ng-app="myApp" ng-controller="mainController">
-    <div class="container">
-        <div class="col-sm-12" style="height:700px;overflow-y: scroll;border:1px solid #ddd;position:relative">
+    <div class="wrapper">
+        <div class="chat-container">
             <ul class="list-group">
                 <li class="list-group-item" ng-repeat="message in main.handle.messages track by $index">
-                    {{message.content}} <small class="text-muted">{{message.timeStamp}}</small> {{main.messages}}
+                    <div ng-cloak>
+                        <strong>{{message.userName}}</strong> : {{message.content}}
+                    </div>
+                    <div>
+                        <small class="text-muted">{{ message.timeStamp | date : 'EEE h:mma' }}</small>
+                    </div>
                 </li>
             </ul>
-            <form class="form-inline row" style="position:absolute;bottom:0;width:100%;">
-                <div class="form-group col-sm-11" style="padding-right:0">
-                    <input style="width:100%" type="text" class="form-control" id="chatBox" placeholder="Send a Message!" ng-model="main.message">
-                </div>
-                <div class="col-sm-1" style="padding-left:0">
-                    <button ng-click="main.sendMessage(main.message)" type="submit" class="btn btn-primary">Send</button>
-                </div>
-            </form>
+        </div>
+        <div class="input-container">
+            <div class="input-box">
+                <input ng-keypress="main.sendMessage($event, main.message)" type="text" class="form-control" id="chatBox" placeholder="Send a Message!" ng-model="main.message" />
+            </div>
+            <div class="input-send-button">
+                <button ng-click="main.sendMessage('clicked',main.message)" type="submit" class="btn btn-primary">Send</button>
+            </div>
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
@@ -30,10 +74,10 @@
     <script src="https://use.fontawesome.com/ffd43d6c17.js"></script>
     <script>
         var myApp = angular.module('myApp', [])
-            .controller("mainController", function($scope) {
+            .controller("mainController", function($scope, $timeout) {
                 //the main controller that will handle chatting
                 $scope.main = this;
-
+                this.userName = "unknown";
                 this.handle = {
                     messages: []
                 };
@@ -48,22 +92,47 @@
                 });
 
                 //When message received from server, push it to the current chat log
+                this.socket.on('logged in', (userName) => {
+                    $scope.$apply(() => {
+                        this.userName = userName;
+                    });
+
+                    this.setScrollBar();
+                });
+
+                //When message received from server, push it to the current chat log
                 this.socket.on('message received', (message) => {
                     $scope.$apply(() => {
                         this.handle.messages.push(message);
                     });
+
+                    this.setScrollBar();
                 });
                 //End of socket listeners
 
                 //Sends the message to the server
-                this.sendMessage = (text) => {
-                    var message = {
-                        content: text,
-                        timeStamp: new Date().toLocaleString()
-                    };
-                    this.socket.emit('message sent', message);
-                    this.message = '';
+                this.sendMessage = (keyEvent, text) => {
+                    if (keyEvent.which === 13 || keyEvent === 'clicked') {
+                        var message = {
+                            userName: this.userName,
+                            content: text,
+                            timeStamp: new Date().toUTCString()
+                        };
+                        this.socket.emit('message sent', message);
+                        this.message = '';
+                        this.setScrollBar();
+                    } else
+                        return;
                 };
+
+                //helper function to set the scrollbar always ta the bottom of its height
+                this.setScrollBar = () => {
+                    $timeout(function() {
+                        var scroller = angular.element(document).find(".chat-container")[0];
+                        scroller.scrollTop = scroller.scrollHeight;
+                    }, 0, false);
+                };
+
 
             });
     </script>
