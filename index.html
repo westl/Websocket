@@ -25,23 +25,23 @@
         }
 
         .chat-container {
-            height: 95vh;
+            height: 90vh;
             order: 1;
             overflow: auto;
+            z-index: 1;
         }
 
         .input-container {
             display: flex;
             flex-direction: row;
-            height: 5vh;
+            height: 10vh;
             order: 2;
+            z-index: 2
         }
 
         .input-box {
             flex: 1;
         }
-
-        .input-send-button {}
     </style>
 </head>
 
@@ -51,10 +51,8 @@
             <ul class="list-group">
                 <li class="list-group-item" ng-repeat="message in main.handle.messages track by $index">
                     <div ng-cloak>
-                        <strong>{{message.userName}}</strong> : {{message.content}}
-                    </div>
-                    <div>
-                        <small class="text-muted">{{ message.timeStamp | date : 'EEE h:mma' }}</small>
+                        <strong ng-style="{color:main.handle.colors[message.userName]}">{{message.userName}}</strong> <small class="text-muted">{{ message.timeStamp | date : 'EEE h:mma' }}</small>
+                        <br />{{message.content}}
                     </div>
                 </li>
             </ul>
@@ -71,15 +69,15 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
-    <script src="https://use.fontawesome.com/ffd43d6c17.js"></script>
     <script>
         var myApp = angular.module('myApp', [])
-            .controller("mainController", function($scope, $timeout) {
+            .controller("mainController", function($scope, $timeout, $filter) {
                 //the main controller that will handle chatting
                 $scope.main = this;
                 this.userName = "unknown";
                 this.handle = {
-                    messages: []
+                    messages: [],
+                    colors: {}
                 };
                 //Socket listeners
                 this.socket = io();
@@ -89,19 +87,27 @@
                     $scope.$apply(() => {
                         this.handle.messages = data;
                     });
+
+                    //user is completely new to application give each username in the chat a new color
+                    this.generateColorObject();
                 });
 
                 //When message received from server, push it to the current chat log
                 this.socket.on('logged in', (userName) => {
                     $scope.$apply(() => {
                         this.userName = userName;
+                        this.handle.colors[this.userName] = 'black';
                     });
-
                     this.setScrollBar();
                 });
 
                 //When message received from server, push it to the current chat log
                 this.socket.on('message received', (message) => {
+                    //just for speeds sake, if the username exists in the color object, lets not generate a  new color for them.
+                    if (!this.existsInColorObject(message.userName)) {
+                        this.generateColorObject();
+                    }
+
                     $scope.$apply(() => {
                         this.handle.messages.push(message);
                     });
@@ -116,7 +122,7 @@
                         var message = {
                             userName: this.userName,
                             content: text,
-                            timeStamp: new Date().toUTCString()
+                            timeStamp: new Date()
                         };
                         this.socket.emit('message sent', message);
                         this.message = '';
@@ -131,6 +137,20 @@
                         var scroller = angular.element(document).find(".chat-container")[0];
                         scroller.scrollTop = scroller.scrollHeight;
                     }, 0, false);
+                };
+
+                this.existsInColorObject = (userName) => {
+                    return this.handle.colors[userName];
+                };
+
+                this.generateColorObject = () => {
+                    for (let messageObject of this.handle.messages) {
+                        //if a username exists, it probably already has a color, therefore, continue
+                        if (this.existsInColorObject(messageObject.userName))
+                            continue;
+                        //username doesn't exist, set a key "their name", and a value "their generated color"
+                        this.handle.colors[messageObject.userName] = '#' + Math.floor(Math.random() * 16777215).toString(16);
+                    }
                 };
 
 

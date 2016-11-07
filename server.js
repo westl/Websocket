@@ -11,13 +11,6 @@ const server = express()
     .listen(PORT, () => console.log(`Listening on ${ PORT }`));
 
 const io = socketIO(server);
-//Create the Message class that will exist on the server
-var Message = function(content, userName) {
-    this.content = content;
-    this.userName = userName;
-    this.timeStamp = new Date().toDateString();
-};
-
 //Create Array that will hold messages on the server side
 var messageArray = [];
 //on connected, send all messages stored and give the user a random username
