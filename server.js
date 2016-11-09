@@ -5,9 +5,8 @@ const socketIO = require('socket.io');
 const path = require('path');
 const Moniker = require('moniker');
 const PORT = process.env.PORT || 3000;
-const INDEX = path.join(__dirname, 'index.html');
 const server = express()
-    .use((req, res) => res.sendFile(INDEX))
+    .use(express.static(path.join(__dirname, 'public')))
     .listen(PORT, () => console.log(`Listening on ${ PORT }`));
 
 const io = socketIO(server);
@@ -15,7 +14,7 @@ const io = socketIO(server);
 var messageArray = [];
 //Create array the will hold everyone who is currently typing
 var currentlyTyping = [];
-//on connected, send all messages stored and give the user a random username 
+//on connected, send all messages stored and give the user a random username
 io.on('connection', (socket) => {
     //pass each user the chat log
     socket.emit('connection', {
