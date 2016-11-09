@@ -25,6 +25,8 @@ io.on('connection', (socket) => {
     var userName = Moniker.choose();
     //give each user a username
     socket.emit('logged in', userName);
+    //tell everyone of your new username and that you connected
+    io.emit('user connected', userName);
 
     socket.on('im typing', (userName) => {
         currentlyTyping.push(userName);
@@ -43,7 +45,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        io.emit('user disconnected');
+        //let everyone know you just disconnected
+        io.emit('user disconnected', userName);
     });
 });
 

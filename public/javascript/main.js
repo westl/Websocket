@@ -37,6 +37,30 @@ var myApp = angular.module('myApp', [])
             this.setScrollBar();
         });
 
+        //When someone new connects to the room
+        this.socket.on('user connected', (userName) => {
+            $scope.$apply(() => {
+                this.handle.messages.push({
+                    userName: "BROADCAST",
+                    content: `${userName} connected!`,
+                    timeStamp: new Date()
+                });
+            });
+            this.setScrollBar();
+        });
+
+        //When someone disconnects from the room
+        this.socket.on('user disconnected', (userName) => {
+            $scope.$apply(() => {
+                this.handle.messages.push({
+                    userName: "BROADCAST",
+                    content: `${userName} disconnected!`,
+                    timeStamp: new Date()
+                });
+            });
+            this.setScrollBar();
+        });
+
         this.socket.on('typing activity updated', (listOfPeopleTyping) => {
             $scope.$apply(() => {
                 this.handle.peopleTyping = listOfPeopleTyping; // simply usernames

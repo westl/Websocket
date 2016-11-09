@@ -1,20 +1,21 @@
 {
-  "name": "Websocket",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "engines": {
-    "node": "6.2.0"
-  },
-  "scripts": {
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "Lamar West <westl@uci.edu>",
-  "license": "ISC",
-  "dependencies": {
-    "express": "4.14.0",
-    "moniker": "^0.1.2",
-    "socket.io": "1.5.1"
-  }
+    "name": "Websocket",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "engines": {
+        "node": "6.2.0"
+    },
+    "scripts": {
+        "start": "node server.js"
+    },
+    "keywords": [],
+    "author": "Lamar West <westl@uci.edu>",
+    "license": "ISC",
+    "dependencies": {
+        "express": "4.14.0",
+        "moniker": "^0.1.2",
+        "socket.io": "1.5.1",
+        "uglify-js": "^2.7.4"
+    }
 }
