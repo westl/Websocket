@@ -3,61 +3,112 @@
 
 <head>
     <title>Lamar's Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous" />
+    <!-- Angular Material style sheet -->
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css" />
 </head>
 
 <body ng-app="myApp" ng-controller="mainController">
-    <div class="wrapper">
-        <div class="chat-container">
-            <ul class="list-group">
-                <li class="list-group-item" ng-repeat="message in main.handle.messages track by $index">
-                    <div ng-cloak>
-                        <strong ng-style="{color:main.handle.colors[message.userName]}">{{message.userName}}</strong> <small class="text-muted">{{ message.timeStamp | date : 'EEE h:mma' }}</small>
-                        <br />{{message.content}}
-                    </div>
-                </li>
-            </ul>
-        </div>
-        <div class="input-container">
-            <div class="flex-row-nowrap">
-                <div class="input-box" ng-cloak>
-                    <input class="form-control no-radius" ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)" type="text" id="chatBox" placeholder="Send a message {{main.userName}}!" ng-model="main.message" />
+    <div class="hundred" layout="column">
+        <!-- Main Toolbar -->
+        <md-toolbar ng-cloak>
+            <div class="md-toolbar-tools">
+                <md-button ng-click="openLeftMenu();main.notifications=0">
+                    <md-icon class="material-icons md-light md-48"> menu </md-icon>
+                    <span class="tag tag-pill tag-danger" ng-if="main.notifications > 0">{{main.notifications}}</span>
+                </md-button>
 
-                </div>
-                <div class="input-send-button" ng-cloak>
-                    <button class="btn btn-primary no-radius" ng-click="main.sendMessage('clicked',main.message)" type="submit">Send</button>
-                </div>
+                <span>Anonymous Chat</span>
+                <!-- fill up the space between left and right area -->
+                <span flex></span>
             </div>
-
+        </md-toolbar>
+        <!-- Content of the page, including the nested sidebar/toolbar -->
+        <md-content class="hundred">
+            <md-sidenav md-component-id="left" class="md-sidenav-left">
+                <!-- nested toolbar -->
+                <md-toolbar ng-cloak>
+                    <div class="md-toolbar-tools">
+                        <md-button ng-disabled="true">
+                            <md-icon class="material-icons md-light md-48"> person </md-icon>
+                        </md-button>
+                        <span>People Connected</span>
+                        <!-- fill up the space between left and right area -->
+                        <span flex></span>
+                    </div>
+                </md-toolbar>
+                <md-content ng-cloak>
+                    <md-list class="no-padding">
+                        <md-list-item class="md-2-line custom-list-item" ng-repeat="person in main.handle.peopleConnected track by $index">
+                            <div class="md-list-item-text">
+                                <strong>{{person.userName}}</strong> <small class="text-muted">{{person.messageCount}} messages sent.</small>
+                            </div>
+                        </md-list-item>
+                    </md-list>
+                </md-content>
+            </md-sidenav>
+            <!-- end of nested toolbar, on to rest of content -->
+            <div class="chat-container" ng-cloak>
+                <md-list class="no-padding">
+                    <md-list-item class="md-2-line custom-list-item" ng-repeat="message in main.handle.messages track by $index">
+                        <div class="md-list-item-text">
+                            <strong ng-style="{color:main.handle.colors[message.userName]}">{{message.userName}}</strong> <small class="text-muted">{{ message.timeStamp | date : 'EEE h:mma' }}</small>
+                            <br />{{message.content}}
+                        </div>
+                    </md-list-item>
+                </md-list>
+            </div>
             <div class="notifications" ng-cloak>
                 <div class="people-typing">
                     <div ng-cloak ng-show="main.handle.peopleTyping.length > 0">
-                        <span class="tag no-radius tag-custom tag-default" ng-if="main.handle.peopleTyping.length >= 1 && main.handle.peopleTyping.length < 5">
-                    <span ng-repeat="person in main.handle.peopleTyping track by $index"  ng-style="{color:main.handle.colors[person]}">
-                      <span ng-if="$index != 0">
-                        ,
-                      </span> {{person}}
+                        <span class="tag no-radius tag-custom tag-default" ng-if="main.handle.peopleTyping.length >= 1 && main.handle.peopleTyping.length < 3">
+               <span ng-repeat="person in main.handle.peopleTyping track by $index"  ng-style="{color:main.handle.colors[person]}">
+                 <span ng-if="$index != 0">
+                   ,
+                 </span> {{person}}
                         </span>
                         is typing &#8230;
                         </span>
-
-                        <span class="tag no-radius tag-custom tag-default" ng-if="main.handle.peopleTyping.length >= 5">
-                        {{main.handle.peopleTyping.length}} people are typing &#8230;
-                    </span>
+                        <span class="tag no-radius tag-custom tag-default" ng-if="main.handle.peopleTyping.length >= 3">
+                   {{main.handle.peopleTyping.length}} people are typing &#8230;
+               </span>
                     </div>
                 </div>
-                <div ng-cloak ng-if="main.message.length > main.maxCharacters" class="alert alert-danger">
-                    <strong>Error!</strong> Your message is too long (max characters: {{main.maxCharacters}}) it will not be sent!
-                </div>
-
             </div>
 
-        </div>
-        <script src="/socket.io/socket.io.js"></script>
-        <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
-        <script src="javascript/main.js"></script>
+            <div class="input-container-test" layout="row">
+                <div flex="95" flex-md="90" flex-sm="85" flex-xs="80">
+                    <form name="messageForm" class="input-box">
+                        <md-input-container class="input-box-container" ng-cloak>
+                            <label>Send a message {{main.userName}}!</label>
+                            <input name="yourMessage" ng-model="main.message" md-no-asterisk md-maxlength="5000" ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)">
+                            <div ng-messages="messageForm.yourMessage.$error">
+                                <div ng-message="md-maxlength">That's too long! It will not be sent!</div>
+                            </div>
+                        </md-input-container>
+                    </form>
+                </div>
+                <div class="input-send-button" flex="5" flex-md="10" flex-sm="15" flex-xs="20" ng-cloak>
+                    <md-button class="md-fab md-mini md-primary" aria-label="Send A Message" ng-click="main.sendMessage('clicked',main.message)" type="submit">
+                        <md-icon class="material-icons md-light md-48"> chat </md-icon>
+                    </md-button>
+                </div>
+            </div>
+        </md-content>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular-messages.min.js"></script>
+    <!-- Angular Material Library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+    <script src="javascript/main.js"></script>
 </body>
 
 </html>

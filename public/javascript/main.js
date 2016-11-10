@@ -1,14 +1,20 @@
-var myApp = angular.module('myApp', [])
-    .controller("mainController", function($scope, $timeout, $filter) {
+var myApp = angular.module('myApp', ['ngMaterial'])
+    .controller("mainController", function($scope, $timeout, $filter, $mdSidenav, $mdToast) {
+        //UI related things
+        $scope.openLeftMenu = function() {
+            $mdSidenav('left').toggle();
+        };
         //the main controller that will handle chatting
         $scope.main = this;
+        this.notifications = 0;
         this.userName = "unknown";
         this.notifiedServiceOfTyping = false; // if we already sent the server a message that we are
         this.maxCharacters = 5000;
         this.handle = {
             messages: [],
             peopleTyping: [],
-            colors: {}
+            colors: {},
+            peopleConnected: {},
         };
         //Socket listeners
         this.socket = io();
@@ -18,7 +24,8 @@ var myApp = angular.module('myApp', [])
             $scope.$apply(() => {
                 this.handle.messages = data.messages;
                 this.handle.peopleTyping = data.peopleTyping;
-                //remove self from array
+                this.handle.peopleConnected = data.peopleConnected;
+                //remove self from array of people typing in any given scenario
                 var index = this.handle.peopleTyping.indexOf(this.userName);
                 if (index > -1)
                     this.handle.peopleTyping.splice(index, 1);
@@ -38,25 +45,26 @@ var myApp = angular.module('myApp', [])
         });
 
         //When someone new connects to the room
-        this.socket.on('user connected', (userName) => {
+        this.socket.on('user connected', (data) => {
+            this.notifications++;
+            var toast = $mdToast.simple();
+            var userName = data.userName;
+            toast.textContent(`${userName} connected!`);
+            $mdToast.show(toast);
             $scope.$apply(() => {
-                this.handle.messages.push({
-                    userName: "BROADCAST",
-                    content: `${userName} connected!`,
-                    timeStamp: new Date()
-                });
+                this.handle.peopleConnected = data.peopleConnected;
             });
             this.setScrollBar();
         });
 
         //When someone disconnects from the room
-        this.socket.on('user disconnected', (userName) => {
+        this.socket.on('user disconnected', (data) => {
+            var toast = $mdToast.simple();
+            var userName = data.userName;
+            toast.textContent(`${userName} disconnected!`);
+            $mdToast.show(toast);
             $scope.$apply(() => {
-                this.handle.messages.push({
-                    userName: "BROADCAST",
-                    content: `${userName} disconnected!`,
-                    timeStamp: new Date()
-                });
+                this.handle.peopleConnected = data.peopleConnected;
             });
             this.setScrollBar();
         });
@@ -72,14 +80,14 @@ var myApp = angular.module('myApp', [])
         });
 
         //When message received from server, push it to the current chat log
-        this.socket.on('message received', (message) => {
-
+        this.socket.on('message received', (data) => {
             $scope.$apply(() => {
-                this.handle.messages.push(message);
+                this.handle.messages.push(data.message);
+                this.handle.peopleConnected = data.peopleConnected; //updates their counts
             });
 
             //just for speeds sake, if the username exists in the color object, lets not generate a  new color for them.
-            if (!this.existsInColorObject(message.userName)) {
+            if (!this.existsInColorObject(data.message.userName)) {
                 this.generateColorObject();
             }
 
