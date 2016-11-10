@@ -27,7 +27,7 @@
             </div>
         </md-toolbar>
         <!-- Content of the page, including the nested sidebar/toolbar -->
-        <md-content class="hundred">
+        <md-content class="hundred fix-content">
             <md-sidenav md-component-id="left" class="md-sidenav-left">
                 <!-- nested toolbar -->
                 <md-toolbar ng-cloak>
@@ -40,7 +40,7 @@
                         <span flex></span>
                     </div>
                 </md-toolbar>
-                <md-content ng-cloak>
+                <md-content class="fix-content" ng-cloak>
                     <md-list class="no-padding">
                         <md-list-item class="md-2-line custom-list-item" ng-repeat="person in main.handle.peopleConnected track by $index">
                             <div class="md-list-item-text">
@@ -84,7 +84,7 @@
                     <form name="messageForm" class="input-box">
                         <md-input-container class="input-box-container" ng-cloak>
                             <label>Send a message {{main.userName}}!</label>
-                            <input name="yourMessage" ng-model="main.message" md-no-asterisk md-maxlength="5000" ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)">
+                            <input class="input-fix" name="yourMessage" ng-model="main.message" md-no-asterisk md-maxlength="5000" ng-change="main.imTyping()" ng-keypress="main.sendMessage($event, main.message)">
                             <div ng-messages="messageForm.yourMessage.$error">
                                 <div ng-message="md-maxlength">That's too long! It will not be sent!</div>
                             </div>
